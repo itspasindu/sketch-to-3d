@@ -218,12 +218,12 @@ function KeyboardZoom({ orbitRef, enabled }: { orbitRef: React.MutableRefObject<
 
 // ─── Scene 3D ─────────────────────────────────────────────────────────────────
 function Scene3D({
-  layout, showFurniture, items, selectedId, setSelectedId, setItems, keyboardEnabled,
+  layout, showFurniture, showRoof, items, selectedId, setSelectedId, setItems, keyboardEnabled,
 }: {
-  layout: Layout; showFurniture: boolean; items: FurnitureItem[];
+  layout: Layout; showFurniture: boolean; showRoof: boolean; items: FurnitureItem[];
   selectedId: string | null; setSelectedId: (id: string | null) => void;
   setItems: React.Dispatch<React.SetStateAction<FurnitureItem[]>>; keyboardEnabled: boolean;
-}) {
+}){
   const groupRef     = useRef<THREE.Group>(null);
   const orbitRef     = useRef<any>(null);
   const dragProxyRef = useRef<THREE.Group>(null);
@@ -297,6 +297,23 @@ function Scene3D({
             <meshStandardMaterial color="#c2ccde" roughness={0.75} metalness={0.05} />
           </mesh>
         ))}
+        {showRoof && (() => {
+          const wb = boundsOfWalls(layout.walls || [], unitScale);
+          if (!wb) return null;
+          return (
+            <mesh position={[wb.cx, wallHeight, wb.cy]} rotation={[-Math.PI / 2, 0, 0]}>
+              <planeGeometry args={[wb.w, wb.h]} />
+              <meshStandardMaterial
+                color="#388bfd"
+                transparent
+                opacity={0.18}
+                side={THREE.DoubleSide}
+                roughness={0.3}
+                metalness={0.1}
+              />
+            </mesh>
+          );
+        })()}
         {showFurniture && items.map((it) => (
           <group key={it.id} onClick={(e) => { e.stopPropagation(); setSelectedId(it.id); }}>
             <FurnitureMesh item={it} selected={selectedId === it.id} />
@@ -344,6 +361,7 @@ const panelStyle: React.CSSProperties = {
 // ─── Main export ──────────────────────────────────────────────────────────────
 export default function Plan3DView({ layout }: { layout?: Layout | null }) {
   const [showFurniture,   setShowFurniture]   = useState(true);
+  const [showRoof,        setShowRoof]        = useState(false);
   const [selectedId,      setSelectedId]      = useState<string | null>(null);
   const [items,           setItems]           = useState<FurnitureItem[]>([]);
   const [keyboardEnabled, setKeyboardEnabled] = useState(false);
@@ -423,6 +441,7 @@ export default function Plan3DView({ layout }: { layout?: Layout | null }) {
         <Scene3D
           layout={layout}
           showFurniture={showFurniture}
+          showRoof={showRoof}
           items={items}
           selectedId={selectedId}
           setSelectedId={setSelectedId}
@@ -505,9 +524,9 @@ export default function Plan3DView({ layout }: { layout?: Layout | null }) {
       >
         {/* Controls card */}
         <div className="card shadow-sm" style={{ ...panelStyle, padding: "14px", border: `1px solid ${D.border}`, borderRadius: 12 }}>
-          {/* Toggle row */}
+          {/* Toggle row - Furniture */}
           <div
-            className="d-flex align-items-center justify-content-between pb-2 mb-3"
+            className="d-flex align-items-center justify-content-between pb-2 mb-2"
             style={{ borderBottom: `1px solid ${D.border}` }}
           >
             <span style={{ fontSize: 11, fontWeight: 600, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.07em" }}>
@@ -521,6 +540,27 @@ export default function Plan3DView({ layout }: { layout?: Layout | null }) {
                 id="showFurnitureCheck"
                 checked={showFurniture}
                 onChange={(e) => setShowFurniture(e.target.checked)}
+                style={{ cursor: "pointer" }}
+              />
+            </div>
+          </div>
+
+          {/* Toggle row - Transparent Roof */}
+          <div
+            className="d-flex align-items-center justify-content-between pb-2 mb-3"
+            style={{ borderBottom: `1px solid ${D.border}` }}
+          >
+            <span style={{ fontSize: 11, fontWeight: 600, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.07em" }}>
+              Transparent Roof
+            </span>
+            <div className="form-check form-switch mb-0">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                role="switch"
+                id="showRoofCheck"
+                checked={showRoof}
+                onChange={(e) => setShowRoof(e.target.checked)}
                 style={{ cursor: "pointer" }}
               />
             </div>
